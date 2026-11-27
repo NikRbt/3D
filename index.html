@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <title>3D Engineering Studio</title>
+  <link rel="stylesheet" href="styles.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "./node_modules/three/build/three.module.js",
+        "three/addons/": "./node_modules/three/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <header class="bar">
+    <span class="brand">3D Engineering Studio</span>
+    <select id="example" title="Beispielmodell laden"></select>
+    <button id="btnOpen" title="Code aus Datei laden">Öffnen</button>
+    <button id="btnSave" title="Code speichern (Strg+S)">Speichern</button>
+    <button id="btnRun" class="primary" title="Strg+Enter">3D ausführen</button>
+    <span class="spacer"></span>
+    <button id="btnPrompt" title="Anweisung für die KI in die Zwischenablage kopieren">KI-Anweisung kopieren</button>
+  </header>
+
+  <main id="split">
+    <section id="left">
+      <div id="editor"></div>
+      <div id="console">
+        <div id="status" class="ok">Bereit</div>
+        <pre id="log"></pre>
+      </div>
+    </section>
+
+    <div id="gutter" title="Ziehen zum Anpassen"></div>
+
+    <section id="right">
+      <div id="viewport">
+        <canvas id="canvas"></canvas>
+        <div class="tools">
+          <div class="tool-group">
+            <button id="tFit" title="Modell vollständig in die Ansicht einpassen">Einpassen</button>
+            <select id="tView" aria-label="Kameraansicht" title="Feste Kameraansicht">
+              <option value="">Kamera …</option>
+              <option value="front">Vorne</option>
+              <option value="right">Rechts</option>
+              <option value="top">Oben</option>
+              <option value="iso">Isometrisch</option>
+            </select>
+            <button id="tOrbit" title="Kamera langsam um das Modell drehen">Umlauf</button>
+            <button id="tFullscreen" title="3D-Ansicht im Vollbild öffnen">Vollbild</button>
+          </div>
+          <div class="tool-group">
+            <select id="tMode" aria-label="Modellierungsmodus" title="Standardmodus für Bauteile ohne explizite Zuordnung">
+              <option value="adaptive" selected>Modus: Adaptiv</option>
+              <option value="organic">Modus: Organisch</option>
+              <option value="realistic">Modus: Realistisch</option>
+              <option value="engineering">Modus: Engineering</option>
+            </select>
+            <select id="tQuality" aria-label="Modell- und Bildqualität" title="Geometrie- und Renderqualität; Adaptiv optimiert je Bauteil">
+              <option value="low">Qualität: Niedrig</option>
+              <option value="medium">Qualität: Mittel</option>
+              <option value="high" selected>Qualität: Hoch</option>
+              <option value="ultra">Qualität: Ultra</option>
+              <option value="adaptive">Qualität: Adaptiv</option>
+            </select>
+            <details class="tool-menu">
+              <summary>Darstellung</summary>
+              <div class="tool-menu-content">
+                <button id="tGrid" class="on">Raster</button>
+                <button id="tAxes" class="on">Achsen</button>
+                <button id="tWire">Drahtgitter</button>
+              </div>
+            </details>
+            <details class="tool-menu">
+              <summary>Animation</summary>
+              <div class="tool-menu-content">
+                <select id="tSpeed" aria-label="Animationsgeschwindigkeit" title="Animationsgeschwindigkeit einstellen">
+                  <option value="0.5">Tempo: 0,5×</option>
+                  <option value="1" selected>Tempo: 1×</option>
+                  <option value="1.5">Tempo: 1,5×</option>
+                  <option value="2">Tempo: 2×</option>
+                </select>
+                <button id="tPause">Animation pausieren</button>
+              </div>
+            </details>
+          </div>
+        </div>
+        <details id="simPanel" open>
+          <summary>Simulation & Messwerte</summary>
+          <div class="sim-content">
+            <div class="sim-actions">
+              <button id="simToggle" class="on">Simulation pausieren</button>
+              <button id="simStep" title="Einen Physik-Zeitschritt ausführen">Ein Schritt</button>
+              <button id="simReset" title="Simulationskörper auf Startzustand zurücksetzen">Zurücksetzen</button>
+            </div>
+            <div class="gravity-settings">
+              <span>Schwerkraft (m/s²)</span>
+              <label>x <input id="gravityX" type="number" step="0.1" value="0"></label>
+              <label>y <input id="gravityY" type="number" step="0.1" value="-9.81"></label>
+              <label>z <input id="gravityZ" type="number" step="0.1" value="0"></label>
+            </div>
+            <dl class="sim-summary">
+              <div><dt>Zeit</dt><dd id="simTime">0,00 s</dd></div>
+              <div><dt>Körper</dt><dd id="simBodies">0</dd></div>
+              <div><dt>Kontakte</dt><dd id="simContacts">0</dd></div>
+              <div><dt>Bewegungsenergie</dt><dd id="simKinetic">0 J</dd></div>
+              <div><dt>Lageenergie</dt><dd id="simPotential">0 J</dd></div>
+              <div><dt>Federenergie</dt><dd id="simSpring">0 J</dd></div>
+              <div><dt>Mechanische Energie</dt><dd id="simTotal">0 J</dd></div>
+            </dl>
+            <div id="simReadouts" class="body-readouts">
+              <span class="sim-empty">Noch keine Physikkörper. Im Modellcode mit physics.add(mesh, { mass: ... }) registrieren.</span>
+            </div>
+            <p class="sim-units">Einheiten: m, kg, s, N, J. Physikschritt: 1/120 s.</p>
+          </div>
+        </details>
+        <div class="hint">Ziehen: drehen · Rechts ziehen: verschieben · Rad: zoomen · F: Vollbild</div>
+      </div>
+    </section>
+  </main>
+
+  <script src="node_modules/monaco-editor/min/vs/loader.js"></script>
+  <script src="node_modules/three/examples/jsm/libs/ammo.wasm.js"></script>
+  <script type="module" src="renderer.js"></script>
+</body>
+</html>
