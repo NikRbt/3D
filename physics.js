@@ -40,6 +40,7 @@ export async function createPhysicsEngine(THREE, AmmoFactory) {
   const activeTorques = new Map();
   const transform = new Ammo.btTransform();
   const zeroVector = new Ammo.btVector3(0, 0, 0);
+  const zeroThreeVector = new THREE.Vector3();
   let accumulator = 0;
   let elapsedTime = 0;
   let contactCount = 0;
@@ -473,8 +474,6 @@ export async function createPhysicsEngine(THREE, AmmoFactory) {
       if (spring.entryB && spring.entryB.mass > 0) applyForceNow(spring.entryB, force.negate());
     }
   }
-
-  const zeroThreeVector = new THREE.Vector3();
 
   function stepFixed() {
     for (const entry of bodyList) applyAnimationDrive(entry);

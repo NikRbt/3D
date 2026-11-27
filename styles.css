@@ -179,6 +179,38 @@ main {
 
 #viewport:fullscreen { background: var(--bg); }
 
+.export-menu { position: relative; }
+.export-menu summary {
+  padding: 5px 10px;
+  min-height: 30px;
+  background: #1d2d3b;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  cursor: pointer;
+  list-style: none;
+  font: inherit;
+  color: var(--text);
+}
+.export-menu summary::-webkit-details-marker { display: none; }
+.export-menu summary::after { content: " ▾"; color: var(--dim); }
+.export-menu[open] summary { border-color: var(--accent); }
+.export-menu summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.export-menu-content {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  display: grid;
+  gap: 5px;
+  min-width: max-content;
+  padding: 7px;
+  background: rgba(16, 25, 35, 0.97);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  z-index: 10;
+}
+.export-menu-content button { white-space: nowrap; }
+
 @media (max-width: 700px) {
   .hint { display: none; }
   .bar { gap: 5px; padding: 6px; }

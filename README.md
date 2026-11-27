@@ -17,6 +17,7 @@ Voraussetzung: Node.js installiert. Dann in den Ordner gehen und `start.bat` dop
 - 3D-Steuerung: links drehen, rechts verschieben, Mausrad zoomen; "Kameraumlauf" dreht die Ansicht automatisch
 - Animationstempo: 0,5× bis 2×; Animationen laufen standardmäßig mit zeitbasiertem `dt`
 - Vollbild: Schaltfläche "Vollbild" oder Taste F
+- Export: GLB (3D-Modell mit Materialien), STL (für 3D-Druck) oder PNG (Bild der aktuellen Ansicht) speichern
 - Physik-Labor: Starrkörper mit Gravitation, Kollisionsformen, Reibung, Rückprall, Kräften, Impulsen, Drehmomenten, Federn und Pendel simulieren; Start/Pause, Einzelschritt und Zurücksetzen verwenden
 - Messwerte: Simulationszeit, Kontakte, Positionen, Geschwindigkeiten sowie Bewegungs-, Lage-, Feder- und Gesamtenergie (SI-Einheiten)
 - "KI-Anweisung kopieren": Text für die KI, damit sie passenden Code liefert
@@ -34,7 +35,7 @@ Voraussetzung: Node.js installiert. Dann in den Ordner gehen und `start.bat` dop
 | ------- | ------ |
 | V1.0 | Editor, 3D-Ansicht, Kamera, Fehleranzeige, Beispiele, Öffnen/Speichern, einfache Animation |
 | V1.1 | Projektverwaltung (mehrere Modelle, Zuletzt geöffnet) |
-| V1.2 | Export STL, OBJ, GLB |
+| V1.2 | Export STL, OBJ, GLB (erledigt in V1.0) |
 | V1.3 | Modellbaum: Bauteile auswählen, ein- und ausblenden, Maße anzeigen |
 | V2.0 | Erweiterte Simulationsanalyse (Messkurven, Parameter-Regler, Auswertung) |
 | V2.1 | Windows-Installer (.exe) |

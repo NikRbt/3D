@@ -56,5 +56,16 @@ ipcMain.handle('physics:wasm', async () => {
   return new Uint8Array(fs.readFileSync(wasmPath));
 });
 
+ipcMain.handle('file:saveBinary', async (_e, name, bytes) => {
+  const res = await dialog.showSaveDialog(win, {
+    title: 'Modell exportieren',
+    defaultPath: name,
+    filters: [{ name, extensions: [path.extname(name).replace('.', '') || 'bin'] }],
+  });
+  if (res.canceled || !res.filePath) return null;
+  fs.writeFileSync(res.filePath, Buffer.from(bytes));
+  return path.basename(res.filePath);
+});
+
 app.whenReady().then(createWindow);
 app.on('window-all-closed', () => app.quit());

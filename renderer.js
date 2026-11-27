@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
+import { STLExporter } from 'three/addons/exporters/STLExporter.js';
 import { EXAMPLES, AI_PROMPT } from './examples.js';
 import { createPhysicsEngine } from './physics.js';
 
@@ -932,6 +934,57 @@ async function saveFile() {
   }
 }
 
+/* ---------- Export ---------- */
+
+function downloadBinary(filename, arrayBuffer) {
+  return window.studio.saveBinaryFile(filename, new Uint8Array(arrayBuffer));
+}
+
+function exportGlb() {
+  if (!stats().meshes) { setStatus('warn', 'Nichts zu exportieren: Die Szene ist leer.'); return; }
+  const exporter = new GLTFExporter();
+  exporter.parse(
+    userGroup,
+    async (result) => {
+      try {
+        const name = await downloadBinary(currentName.replace(/\.js$/i, '') + '.glb', result);
+        if (name) setStatus('ok', `Exportiert: ${name}`);
+      } catch (e) { setStatus('err', `GLB-Export fehlgeschlagen: ${e.message}`); }
+    },
+    (error) => setStatus('err', `GLB-Export fehlgeschlagen: ${error.message || error}`),
+    { binary: true },
+  );
+}
+
+function exportStl() {
+  if (!stats().meshes) { setStatus('warn', 'Nichts zu exportieren: Die Szene ist leer.'); return; }
+  try {
+    const exporter = new STLExporter();
+    const result = exporter.parse(userGroup, { binary: true });
+    downloadBinary(currentName.replace(/\.js$/i, '') + '.stl', result.buffer)
+      .then((name) => { if (name) setStatus('ok', `Exportiert: ${name}`); })
+      .catch((e) => setStatus('err', `STL-Export fehlgeschlagen: ${e.message}`));
+  } catch (e) {
+    setStatus('err', `STL-Export fehlgeschlagen: ${e.message}`);
+  }
+}
+
+function exportPng() {
+  try {
+    renderer.render(scene, camera);
+    canvas.toBlob(async (blob) => {
+      if (!blob) { setStatus('err', 'PNG-Export fehlgeschlagen: Kein Bild erhalten.'); return; }
+      const buffer = await blob.arrayBuffer();
+      try {
+        const name = await downloadBinary(currentName.replace(/\.js$/i, '') + '.png', buffer);
+        if (name) setStatus('ok', `Exportiert: ${name}`);
+      } catch (e) { setStatus('err', `PNG-Export fehlgeschlagen: ${e.message}`); }
+    }, 'image/png');
+  } catch (e) {
+    setStatus('err', `PNG-Export fehlgeschlagen: ${e.message}`);
+  }
+}
+
 /* ---------- Bedienelemente ---------- */
 
 const exampleSel = $('#example');
@@ -949,6 +1002,9 @@ exampleSel.addEventListener('change', () => {
 $('#btnRun').addEventListener('click', () => run());
 $('#btnOpen').addEventListener('click', openFile);
 $('#btnSave').addEventListener('click', saveFile);
+$('#btnExportGlb').addEventListener('click', exportGlb);
+$('#btnExportStl').addEventListener('click', exportStl);
+$('#btnExportPng').addEventListener('click', exportPng);
 
 $('#btnPrompt').addEventListener('click', async () => {
   const btn = $('#btnPrompt');
