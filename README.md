@@ -13,7 +13,8 @@ Voraussetzung: Node.js installiert. Dann in den Ordner gehen und `start.bat` dop
 - Qualität: Niedrig, Mittel, Hoch, Ultra oder Adaptiv; adaptive Qualität richtet Geometriedetails nach Bauteil und Polygonzahl aus. Die Auswahl gilt für neue Modellläufe
 - Geometrieoptimierung: ungültige Vertex-Koordinaten werden gemeldet, degenerierte Dreiecke erkannt, fehlende/fehlerhafte Normalen repariert und niedrig aufgelöste organische Flächen bei Bedarf mit begrenzter Loop-Subdivision verfeinert. Engineering-Kanten werden nicht pauschal geglättet
 - PBR-Darstellung: MeshStandardMaterial/MeshPhysicalMaterial mit Studioumgebung für Materialreflexionen und dynamisch gewählter Schatten- und Texturqualität
-- Darstellung: Raster, Achsen und Drahtgitter sind in der gruppierten Darstellungsauswahl; Animationsoptionen sind separat angeordnet
+- Realismus-Verbesserungen: AgX-Tonemapping für filmischen Look, SSAO-Raumschatten für realistische Kontaktschatten, Bloom-Lichtglanz für helle Lichtquellen, SMAA-Kantenglättung, Tiefennebel und Kontakt-Schattenebene
+- Darstellung: Raster, Achsen, Drahtgitter, Raumschatten (SSAO) und Lichtglanz (Bloom) sind in der gruppierten Darstellungsauswahl; Animationsoptionen sind separat angeordnet
 - 3D-Steuerung: links drehen, rechts verschieben, Mausrad zoomen; "Kameraumlauf" dreht die Ansicht automatisch
 - Animationstempo: 0,5× bis 2×; Animationen laufen standardmäßig mit zeitbasiertem `dt`
 - Vollbild: Schaltfläche "Vollbild" oder Taste F

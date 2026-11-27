@@ -4,6 +4,12 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 import { STLExporter } from 'three/addons/exporters/STLExporter.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { SSAOPass } from 'three/addons/postprocessing/SSAOPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { SMAAPass } from 'three/addons/postprocessing/SMAAPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { EXAMPLES, AI_PROMPT } from './examples.js';
 import { createPhysicsEngine } from './physics.js';
 
@@ -46,12 +52,16 @@ const maxAnisotropy = renderer.capabilities.getMaxAnisotropy();
 let renderAnisotropy = maxAnisotropy;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.1;
+renderer.toneMapping = THREE.AgXToneMapping;
+renderer.toneMappingExposure = 1.0;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+let ssaoEnabled = true;
+let bloomEnabled = true;
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0d151d);
+scene.fog = new THREE.FogExp2(0x0d151d, 0.012);
 const pmremGenerator = new THREE.PMREMGenerator(renderer);
 scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
 pmremGenerator.dispose();
@@ -95,6 +105,14 @@ scene.add(fill);
 const grid = new THREE.GridHelper(40, 40, 0x3a5368, 0x1e2d3a);
 const axes = new THREE.AxesHelper(3);
 scene.add(grid, axes);
+
+// Kontakt-Schattenebene: fängt Schatten auf, bleibt selbst unsichtbar
+const shadowCatcherMat = new THREE.ShadowMaterial({ opacity: 0.35 });
+const shadowCatcher = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), shadowCatcherMat);
+shadowCatcher.rotation.x = -Math.PI / 2;
+shadowCatcher.position.y = 0;
+shadowCatcher.receiveShadow = true;
+scene.add(shadowCatcher);
 
 // Alles, was der Modellcode erzeugt, landet in dieser Gruppe ("scene" im Code)
 const userGroup = new THREE.Group();
@@ -215,6 +233,12 @@ new ResizeObserver(() => {
   renderer.setSize(w, h, false);
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
+  if (composer) {
+    const pixelRatio = renderer.getPixelRatio();
+    composer.setPixelRatio(pixelRatio);
+    composer.setSize(w, h);
+    if (ssaoPass) ssaoPass.setSize(w * pixelRatio, h * pixelRatio);
+  }
 }).observe(viewport);
 
 function tick() {
@@ -254,7 +278,8 @@ function tick() {
     updateSimulationReadouts();
   }
   controls.update();
-  renderer.render(scene, camera);
+  if (composer) composer.render();
+  else renderer.render(scene, camera);
 }
 
 function disposeMaterial(m) {
@@ -344,9 +369,57 @@ function updateRenderQuality() {
   key.shadow.needsUpdate = true;
   updateShadows();
   renderer.setSize(Math.max(viewport.clientWidth, 1), Math.max(viewport.clientHeight, 1), false);
+  if (composer) {
+    const w = Math.max(viewport.clientWidth, 1);
+    const h = Math.max(viewport.clientHeight, 1);
+    const pixelRatio = renderer.getPixelRatio();
+    composer.setPixelRatio(pixelRatio);
+    composer.setSize(w, h);
+    if (ssaoPass) ssaoPass.setSize(w * pixelRatio, h * pixelRatio);
+  }
 }
 
 updateRenderQuality();
+
+/* ---------- Post-Processing ---------- */
+
+let composer = null;
+let ssaoPass = null;
+let bloomPass = null;
+let smaaPass = null;
+
+function buildComposer() {
+  const w = Math.max(viewport.clientWidth, 1);
+  const h = Math.max(viewport.clientHeight, 1);
+  const pixelRatio = renderer.getPixelRatio();
+
+  composer = new EffectComposer(renderer);
+  composer.setPixelRatio(pixelRatio);
+  composer.setSize(w, h);
+
+  composer.addPass(new RenderPass(scene, camera));
+
+  ssaoPass = new SSAOPass(scene, camera, w * pixelRatio, h * pixelRatio);
+  ssaoPass.kernelRadius = 8;
+  ssaoPass.minDistance = 0.005;
+  ssaoPass.maxDistance = 0.08;
+  ssaoPass.enabled = ssaoEnabled;
+  composer.addPass(ssaoPass);
+
+  bloomPass = new UnrealBloomPass(
+    new THREE.Vector2(w * pixelRatio, h * pixelRatio),
+    0.42, 0.6, 0.82,
+  );
+  bloomPass.enabled = bloomEnabled;
+  composer.addPass(bloomPass);
+
+  smaaPass = new SMAAPass(w * pixelRatio, h * pixelRatio);
+  composer.addPass(smaaPass);
+
+  composer.addPass(new OutputPass());
+}
+
+buildComposer();
 
 function stats() {
   let meshes = 0;
@@ -971,7 +1044,8 @@ function exportStl() {
 
 function exportPng() {
   try {
-    renderer.render(scene, camera);
+    if (composer) composer.render();
+    else renderer.render(scene, camera);
     canvas.toBlob(async (blob) => {
       if (!blob) { setStatus('err', 'PNG-Export fehlgeschlagen: Kein Bild erhalten.'); return; }
       const buffer = await blob.arrayBuffer();
@@ -1071,6 +1145,8 @@ toggle($('#tOrbit'), false, (on) => { controls.autoRotate = on; });
 toggle($('#tGrid'), true, (on) => { grid.visible = on; });
 toggle($('#tAxes'), true, (on) => { axes.visible = on; });
 toggle($('#tWire'), false, (on) => { wireframe = on; applyWireframe(); });
+toggle($('#tSsao'), true, (on) => { ssaoEnabled = on; if (ssaoPass) ssaoPass.enabled = on; });
+toggle($('#tBloom'), true, (on) => { bloomEnabled = on; if (bloomPass) bloomPass.enabled = on; });
 $('#tPause').addEventListener('click', (e) => {
   paused = !paused;
   e.target.classList.toggle('on', paused);
